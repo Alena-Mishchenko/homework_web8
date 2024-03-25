@@ -9,10 +9,15 @@ connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost',
 channel = connection.channel()
 
 channel.exchange_declare(exchange='homwork exchange', exchange_type='direct')
-channel.queue_declare(queue='contacts_queue', durable=True)
-channel.queue_bind(exchange='homwork exchange', queue='contacts_queue')
+# channel.queue_declare(queue='contacts_queue', durable=True)
+# channel.queue_bind(exchange='homwork exchange', queue='contacts_queue')
 
+channel.queue_declare(queue='email_contacts', durable=True)
+channel.queue_bind(exchange='homework_exchange', queue='email_contacts', routing_key='email')
 
+# Queue for SMS contacts
+channel.queue_declare(queue='sms_contacts', durable=True)
+channel.queue_bind(exchange='homework_exchange', queue='sms_contacts', routing_key='sms')
 def create_contacts(nums: int):
     fake = Faker()
     contacts = []
@@ -22,7 +27,8 @@ def create_contacts(nums: int):
             email=fake.email(),
             message_sent=False,
             phone_number=fake.phone_number(),
-            address=fake.address()
+            # address=fake.address()
+            prefered_communication=fake.random_element(elements=["email", "sms"])
         )
         contact.save()
         contacts.append(contact)
@@ -31,8 +37,12 @@ def create_contacts(nums: int):
 def send_contacts(contacts):
     for contact in contacts:
         message = str(contact.id)  
-        channel.basic_publish(exchange='homwork exchange', routing_key='contacts_queue', body=json.dumps(message).encode())
+        # channel.basic_publish(exchange='homwork exchange',\
+        #  routing_key='contacts_queue', body=json.dumps(message).encode())
+        routing_key = 'email' if contact.prefered_communication == 'email' else 'sms'
+        channel.basic_publish(exchange='homework_exchange', routing_key=routing_key, body=json.dumps(message).encode())
     connection.close()
+   
 
 
 

@@ -13,4 +13,5 @@ class Contact(Document):
     message_sent = BooleanField(default=False)  
     phone_number = StringField()
     address = StringField()
+    prefered_communication = StringField(choices=["email", "sms"], default="email")
     meta = {"collection": "contact"}
